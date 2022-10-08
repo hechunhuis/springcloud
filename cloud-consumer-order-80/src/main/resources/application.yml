@@ -1,2 +1,13 @@
 server:
   port: 80
+
+spring:
+  application:
+    name: cloud-order-service
+
+eureka:
+  client:
+    register-with-eureka: true #表示将自己注册进EurekaServer
+    fetch-registry: true # 是否从EurekaServer抓取自己的注册信息，默认为true，单节点无所谓，集群必须设置为TRUE才能配合Ribbon使用负载均衡
+    service-url:
+      defaultZone: http://localhost:7001/eureka
