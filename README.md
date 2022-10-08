@@ -24,3 +24,6 @@ mvn idea:idea
 ### Eureka注册中心【cloud-eureka-server-7001】
 ### 消费者-订单模块【cloud-consumer-oder-80】
 ### 生产者-支付模块【cloud-provider-payment-8001】
+
+## APIPost接口文档
+https://console-docs.apipost.cn/preview/5c9e12fd11eb6342/bb1f08f7f0c93060
