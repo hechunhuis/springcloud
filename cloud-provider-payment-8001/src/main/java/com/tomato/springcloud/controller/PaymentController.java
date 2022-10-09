@@ -5,9 +5,12 @@ import com.tomato.springcloud.entities.Payment;
 import com.tomato.springcloud.service.PaymentService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 /**
  * @author : tomato<hechunhui_email@163.com>
@@ -24,6 +27,22 @@ public class PaymentController {
 
     @Resource
     private PaymentService paymentService;
+
+    @Resource
+    private DiscoveryClient discoveryClient;
+
+    @GetMapping(value = "/payment/discovery")
+    public Object discovery() {
+        //获取服务信息
+        List<String> services = discoveryClient.getServices();
+        services.forEach(service -> log.info("*****sevice: " + service));
+
+        List<ServiceInstance> instances = discoveryClient.getInstances("CLOUD-PAYMENT-SERVICE");
+        instances.forEach(instance -> log.info(String.format("%s \t %s \t %s \t %s",
+                instance.getServiceId(), instance.getHost(), instance.getPort(), instance.getUri())));
+
+        return this.discoveryClient;
+    }
 
     @PostMapping(value = "/payment/create")
     public CommonResult create(@RequestBody Payment payment) {
