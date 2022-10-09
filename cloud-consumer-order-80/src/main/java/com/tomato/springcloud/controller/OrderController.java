@@ -3,6 +3,7 @@ package com.tomato.springcloud.controller;
 import com.tomato.springcloud.commons.CommonResult;
 import com.tomato.springcloud.entities.Payment;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,19 +22,20 @@ import javax.annotation.Resource;
 @Slf4j
 public class OrderController {
 
-    public static final String PAYMENT_URL = "http://localhost:8001";
+    private static final String PAYMENT_NAME = "http://CLOUD-PAYMENT-SERVICE";
+
     @Resource
     private RestTemplate restTemplate;
 
     @PostMapping("/consumer/payment/create")
     public CommonResult<Payment> create(Payment payment){
         log.info("调用：/consumer/payment/create");
-        return restTemplate.postForObject(PAYMENT_URL + "/payment/create", payment, CommonResult.class);
+        return restTemplate.postForObject(PAYMENT_NAME + "/payment/create", payment, CommonResult.class);
     }
 
     @GetMapping("/consumer/payment/get/{id}")
     public CommonResult<Payment> getPayment(@PathVariable("id") Long id){
         log.info("调用：/consumer/payment/get/{id}");
-        return restTemplate.getForObject(PAYMENT_URL + "/payment/get/" + id, CommonResult.class);
+        return restTemplate.getForObject(PAYMENT_NAME + "/payment/get/" + id, CommonResult.class);
     }
 }
