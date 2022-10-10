@@ -21,9 +21,17 @@ mvn idea:idea
 
 ## 模块介绍
 ### 公共模块【cloud-api-commons】
-### Eureka注册中心【cloud-eureka-server-7001】
 ### 消费者-订单模块【cloud-consumer-oder-80】
-### 生产者-支付模块【cloud-provider-payment-8001】
-
+注册进入Eureka集群中
+### Eureka注册中心集群
+【cloud-eureka-server-7001】<br/>
+【cloud-eureka-server-7002】
+### 生产者-支付模块集群
+分别注册进Eureka集群中<br/>
+【cloud-provider-payment-8001】<br/>
+【cloud-provider-payment-8002】
+### 生产者-支付模块
+注册进zookeeper<br/>
+【cloud-provider-payment-8002】
 ## APIPost接口文档
 https://console-docs.apipost.cn/preview/5c9e12fd11eb6342/bb1f08f7f0c93060
