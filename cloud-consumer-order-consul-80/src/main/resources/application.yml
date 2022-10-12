@@ -1,9 +1,9 @@
 server:
-  port: 8006
+  port: 80
 
 spring:
   application:
-    name: cloud-provider-consul-payment
+    name: cloud-consumer-consul-order
   # consul注册中心
   cloud:
     consul:
