@@ -32,6 +32,6 @@ mvn idea:idea
 【cloud-provider-payment-8002】
 ### 生产者-支付模块
 注册进zookeeper<br/>
-【cloud-provider-payment-8002】
+【cloud-provider-payment-8004】
 ## APIPost接口文档
 https://console-docs.apipost.cn/preview/5c9e12fd11eb6342/bb1f08f7f0c93060
