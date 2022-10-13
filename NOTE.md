@@ -53,5 +53,73 @@ Eureka采用了CS的设计架构，Eureka Server作为服务注册功能的服�
 
   是一个Java客户端，用于简化Eureka Server的交互，客户端同时也具备一个内置的、使用轮询负载算法的负载均衡器。在应用启动后，将会向Eureka Server发送心跳（默认周期为30秒）。如果Eureka Server在多个心跳周期内没有接收到某个节点的心跳，EurekaServer将会从服务注册表中将这个服务节点移除（默认90秒）。
 
+# 四. Ribbon负载均衡
+## 1. 负载均衡算法策略
+1.com.netflix.loadbalancer.RoundRobinRule 轮询
+2.com.netflix.loadbalancer.RandomRule     随机
+3.com.netflix.loadbalancer.RetryRule      先按照RoundRobinRule的策略获取服务，如果获取服务失败则在指定时间内会进行重置，获取可用服务
+4.WeightedResponseTimeRule                对RoundRobinRule的扩展，响应速度越快的示例选择权重越大，越容易被选择
+5.BestAvailableRule                       会先过滤掉由于多次访问故障而处于断路器跳闸状态的服务，然后选择一个并发量最小的服务
+6.AvailabilityFilteringRule               先过滤掉故障实例，再选择并发较小的实例
+7.ZoneAvoidanceRule                       默认规则，复合判断server所在区域的性能和server的可用性选择服务器
+## 2. 替换负载规则
+注意：自定义配置不能放到ComponentScan扫描的包以及子包下
+1.创建配置类
+```java
+package com.tomato.ribbon;
+
+import com.netflix.loadbalancer.IRule;
+import com.netflix.loadbalancer.RandomRule;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * @ClassName Rule
+ * @Description ribbon的负载均衡规则替换
+ * @Author hch
+ * @Email hechunhui_email@163.com
+ * @Date 2022/10/13 19:21
+ * @Version 1.0
+ **/
+@Configuration
+public class Rule {
+
+  @Bean
+  public IRule rule() {
+//      return new RetryRule();
+//      return new WeightedResponseTimeRule();
+//      return new BestAvailableRule();
+//      return new AvailabilityFilteringRule();
+//      return new ZoneAvoidanceRule();
+    return new RandomRule(); //定义为随机
+
+  }
+}
+```
+2.在启动类上添加@RibbonClient注解
+```java
+package com.tomato.springcloud;
+
+import com.tomato.ribbon.Rule;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
+import org.springframework.cloud.netflix.ribbon.RibbonClient;
+
+/**
+ * @author : tomato<hechunhui_email@163.com>
+ * @date : 2022/10/8 20:54
+ * @className : OrderMain
+ * @description: 订单模块主启动类
+ */
+@SpringBootApplication
+@EnableEurekaClient
+@RibbonClient(name = "CLOUD_PAYMENT_SERVICE", configuration = Rule.class)
+public class OrderMain80 {
+  public static void main(String[] args) {
+    SpringApplication.run(OrderMain80.class, args);
+  }
+}
+```
 
 
