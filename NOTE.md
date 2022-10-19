@@ -20,14 +20,21 @@
 6. 服务分布式与配置【spring cloud config】
 7. 服务开发【springboot】
 
-# 二. 技术选型
+# 二. 技术学习路线
 
-1. cloud：Hoxton.SR1
-2. boot：2.2.2.RELEASE
-3. cloud alibaba：2.1.0.RELEASE
-4. Java：Java8
-5. Maven：3.5及以上
-6. Mysql：5.7及以上
+服务注册中心：[Eureka](#三. Eureka服务注册中心) -> **[Zookeeper](#四. Zookeeper) -> [Consul](#五. Consul) -> Nacos**
+
+服务调用：**[Ribbon](#六. Ribbon负载均衡) -> LoadBalancer**
+
+服务调用2：Feign -> **[OpenFeign](#七. OpenFeign)**
+
+服务降级：Hystrix -> **resilience4j -> sentinel**
+
+服务网关：Zuul -> Zuul2 -> **gateway**
+
+服务配置：Config -> **Nacos**
+
+服务总线：Bus -> **Nacos**
 
 # 三. Eureka服务注册中心
 
@@ -53,7 +60,34 @@ Eureka采用了CS的设计架构，Eureka Server作为服务注册功能的服�
 
   是一个Java客户端，用于简化Eureka Server的交互，客户端同时也具备一个内置的、使用轮询负载算法的负载均衡器。在应用启动后，将会向Eureka Server发送心跳（默认周期为30秒）。如果Eureka Server在多个心跳周期内没有接收到某个节点的心跳，EurekaServer将会从服务注册表中将这个服务节点移除（默认90秒）。
 
-# 四. Ribbon负载均衡
+# 四. Zookeeper
+
+ZooKeeper是一个[分布式](https://baike.baidu.com/item/%E5%88%86%E5%B8%83%E5%BC%8F/19276232?fromModule=lemma_inlink)的，开放源码的[分布式应用程序](https://baike.baidu.com/item/%E5%88%86%E5%B8%83%E5%BC%8F%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F/9854429?fromModule=lemma_inlink)协调服务，是[Google](https://baike.baidu.com/item/Google?fromModule=lemma_inlink)的Chubby一个[开源](https://baike.baidu.com/item/%E5%BC%80%E6%BA%90/246339?fromModule=lemma_inlink)的实现，是Hadoop和[Hbase](https://baike.baidu.com/item/Hbase/7670213?fromModule=lemma_inlink)的重要组件。它是一个为分布式应用提供一致性服务的软件，提供的功能包括：配置维护、域名服务、分布式同步、组服务等。
+
+ZooKeeper的目标就是封装好复杂易出错的关键服务，将简单易用的接口和性能高效、功能稳定的系统提供给用户。
+
+ZooKeeper包含一个简单的原语集，提供Java和C的接口。
+
+ZooKeeper代码版本中，提供了分布式独享锁、选举、队列的接口，代码在$zookeeper_home\src\recipes。其中分布锁和队列有[Java](https://baike.baidu.com/item/Java/85979?fromModule=lemma_inlink)和C两个版本，选举只有Java版本。
+
+# 五. Consul
+
+Consul是HashiCorp公司推出的开源工具，用于实现分布式系统的服务发现与配置。 Consul是分布式的、高可用的、可横向扩展的。它具备以下特性 :
+
+服务发现：consul通过DNS或者HTTP接口使服务注册和服务发现变的很容易，一些外部服务，例如saas提供的也可以一样注册。
+健康检查：健康检测使consul可以快速的告警在集群中的操作。和服务发现的集成，可以防止服务转发到故障的服务上面。
+键/值存储：一个用来存储动态配置的系统。提供简单的HTTP接口，可以在任何地方操作。
+多数据中心：无需复杂的配置，即可支持任意数量的区域。
+
+## 1. 优势
+
+使用 Raft 算法来保证一致性, 比复杂的 Paxos 算法更直接. 相比较而言, zookeeper 采用的是 Paxos, 而 etcd 使用的则是 Raft. 
+支持多数据中心，内外网的服务采用不同的端口进行监听。 多数据中心集群可以避免单数据中心的单点故障,而其部署则需要考虑网络延迟, 分片等情况等. zookeeper 和 etcd 均不提供多数据中心功能的支持. 
+支持健康检查. etcd 不提供此功能. 
+支持 http 和 dns 协议接口. zookeeper 的集成较为复杂, etcd 只支持 http 协议. 
+官方提供web管理界面, etcd 无此功能.
+
+# 六. Ribbon负载均衡
 ## 1. 负载均衡算法策略
 1.com.netflix.loadbalancer.RoundRobinRule 轮询
 2.com.netflix.loadbalancer.RandomRule     随机
@@ -127,3 +161,11 @@ public class OrderMain80 {
 rest接口请求次数 % 服务器集群总数 = 实际调用服务器位置下标
 
 CAS + 自旋锁
+
+# 七. OpenFeign
+
+## 1. 概述
+
+Feign是一个声明式WebService客户端。使用Feign能让编写WebService客户端更加简单。
+
+它的使用方式是定义一个服务接口然后在上面添加注释。Feign也支持可拔插式的编码器和解码器。SpringCloud对Feign进行了封装，使其支持了Spring MVC标注注解和HttpMessageConverters。Feign可以与Eureka和Ribbon组合使用以支持负载均衡
