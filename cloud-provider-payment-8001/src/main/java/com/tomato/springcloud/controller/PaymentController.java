@@ -65,4 +65,13 @@ public class PaymentController {
             return new CommonResult(444, "没有查询到记录！,执行服务端口:" + serverPort, null);
         }
     }
+
+    /**
+     * 手写负载均衡
+     * @return
+     */
+    @GetMapping(value = "payment/lb")
+    public String getPaymentLB() {
+        return serverPort;
+    }
 }
