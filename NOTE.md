@@ -164,8 +164,29 @@ CAS + 自旋锁
 
 # 七. OpenFeign
 
-## 1. 概述
+## 1. Feign概述
 
 Feign是一个声明式WebService客户端。使用Feign能让编写WebService客户端更加简单。
 
 它的使用方式是定义一个服务接口然后在上面添加注释。Feign也支持可拔插式的编码器和解码器。SpringCloud对Feign进行了封装，使其支持了Spring MVC标注注解和HttpMessageConverters。Feign可以与Eureka和Ribbon组合使用以支持负载均衡
+
+## 2. OpenFeign与Feign的区别
+
+Feign是Spring Cloud组件中的一个轻量级RESTful的HTTP服务客户端，Feign内置了Ribbon，用来做客户端负载均衡，去调用服务注册中心的服务。Fegin的使用方式是：使用Feign的注解定义接口，调用这个接口，就可以调用服务注册中心的服务
+
+```xml
+<dependency>
+	<groupId>org.springframework,cloud</groupId>
+	<artifactId>spring-cloud-starter-feign</artifactId>
+</dependency>
+```
+
+OpenFeign是SpringCloud在Feign的基础上支持了SpringMVC的朱姐，如@RequestMapping等等。OpenFeign的@FeignClient可以解析SpringMVC的@RequestMapping注解下的接口，并通过动态代理的方式产生实现类，实现类中做负载均衡并调用其他服务。
+
+```xml
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>apring-cloud-starter-openfeign</artifactId>
+</dependency>
+```
+
