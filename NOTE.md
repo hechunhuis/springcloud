@@ -190,3 +190,73 @@ OpenFeign是SpringCloud在Feign的基础上支持了SpringMVC的朱姐，如@Req
 </dependency>
 ```
 
+## 3. OpenFeign使用
+
+OpenFeign使用在客户端
+
+在客户端启动类上添加注解：@EnableFeignClients
+
+在客户端建立service以及对应的服务提供者service接口，具体如下：
+
+```java
+@Component
+@FeignClient(value = "CLOUD-PAYMENT-SERVICE") //服务提供者名称
+public interface PaymentFeignService {
+
+    @GetMapping(value = "/payment/get/{id}") //服务提供者Controller路由路径
+    CommonResult<Payment> getPaymentById(@PathVariable("id") Long id);
+
+    @GetMapping(value = "/payment/feign/timeout") //服务提供者Controller路由路径
+    String paymentFeignTimeout();
+}
+
+```
+
+## 4. 超时设置
+
+OpenFeign底层使用Ribbon，默认请求服务提供者提供的服务，超时时间为1秒
+
+在客户端设置默认超时时间
+
+```yaml
+# 设置feign客户端超时时间（OpenFeign默认支持Ribbon）
+ribbon:
+  # 指的是建立连接所用的时间，适用于网络状况正常的情况下，两端连接所用的时间
+  ReadTimeout: 5000
+  # 指的是建立连接后从服务器读取到可用资源所用的时间
+  ConnectTimeout: 5000
+```
+
+## 5. OpenFeign HTTP 日志输出
+
+默认的四种日志显示
+
+- NONE：默认的，不显示任何日志；
+- BASIC：仅记录请求方法、URL、响应状态码以及执行时间；
+- HEADERS：除了BASIC中定义的信息之外，还有请求和响应的头信息；
+- FULL：除了HEADERS中定义的信息之外，还有请求和响应的正文以及元数据；
+
+配置：
+
+增加配置类：FeignConfig
+
+```java
+@Configuration
+public class FeignConfig {
+
+    @Bean
+    Logger.Level feignLoggerLevel() {
+        return Logger.Level.FULL;
+    }
+}
+```
+
+application.yml增加配置
+
+```
+logging:
+  level:
+    # feign日志以什么级别监控哪个接口
+    com.tomato.springcloud.service.PaymentFeignService: debug
+```
+
