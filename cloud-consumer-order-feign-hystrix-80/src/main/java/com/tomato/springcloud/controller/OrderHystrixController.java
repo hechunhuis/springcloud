@@ -1,5 +1,6 @@
 package com.tomato.springcloud.controller;
 
+import com.netflix.hystrix.contrib.javanica.annotation.DefaultProperties;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import com.tomato.springcloud.service.PaymentHystrixService;
@@ -18,6 +19,7 @@ import javax.annotation.Resource;
  */
 @RestController
 @Slf4j
+@DefaultProperties(defaultFallback = "paymentGlobalFallback")
 public class OrderHystrixController {
 
     @Resource
@@ -29,6 +31,7 @@ public class OrderHystrixController {
         return result;
     }
 
+    //自定义的fallback 开始
     @GetMapping("consumer/payment/hystrix/timeout/{id}")
     @HystrixCommand(fallbackMethod = "paymentReturnTimeoutHandler", commandProperties = {
             @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds",value = "1500")
@@ -40,5 +43,19 @@ public class OrderHystrixController {
 
     public String paymentReturnTimeoutHandler(@PathVariable("id") Integer id) {
         return "我是消费者，支付服务繁忙或自检出错，请检查o(╥﹏╥)o";
+    }
+    //自定义的fallback 结束
+
+    //全局默认的fallback
+
+    @GetMapping("consumer/payment/hystrix/timeout/global/{id}")
+    @HystrixCommand
+    public String paymentReturnTimeoutGlobal(@PathVariable("id") Integer id) {
+        String result = paymentHystrixService.paymentReturnTimeout(id);
+        return result;
+    }
+
+    public String paymentGlobalFallback() {
+        return "服务器繁忙，请稍后再试o(╥﹏╥)o";
     }
 }
