@@ -282,23 +282,95 @@ http://github.com/Netfix/Hystrix/wiki/How-To-Use
 
 ## 4.Hystrix重要概念
 
-- 服务降级
+### 服务降级（一般配置在客户端）
 
-  比如服务器忙，请稍后再试，不让客户端等待并立刻返回一个友好提示，fallback
+比如服务器忙，请稍后再试，不让客户端等待并立刻返回一个友好提示，fallback
 
-  哪些情况会触发降级
+哪些情况会触发降级
 
-  1. 程序运行异常
-  2. 超时
-  3. 服务熔断触发服务降级
-  4. 线程池/信号量打满也会导致服务降级
+1. 程序运行异常
+2. 超时
+3. 服务熔断触发服务降级
+4. 线程池/信号量打满也会导致服务降级
 
-- 服务熔断
+**maven依赖：**
 
-  类比保险丝达到最大服务访问后，直接拒绝访问，拉闸限电，然后调用服务降级的方法并返回友好提示
+```xml
+<dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+        </dependency>
+```
 
-  就是保险丝：服务的降级 -> 进而熔断 -> 恢复调用链路
+启动类添加
 
-- 服务限流
+```java
+@EnableHystrix
+```
 
-  秒杀高并发等操作，严禁一窝蜂的过来拥挤，大家排队，一秒钟N个，有序进行
+#### 自定义服务降级
+
+在消费者controller的路由方法上添加一下代码，并添加指定fallback方法【paymentReturnTimeoutHandler】，设置超时1.5秒自动返回【paymentReturnTimeoutHandler】的处理
+
+```java
+@HystrixCommand(fallbackMethod = "paymentReturnTimeoutHandler", commandProperties = {
+            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds",value = "1500")
+    })
+```
+
+#### 全局服务降级
+
+在Controller路由上添加默认属性
+
+```java
+@DefaultProperties(defaultFallback = "paymentGlobalFallback")
+```
+
+在路由中添加注解@HystrixCommand，并添加方法【paymentGlobalFallback】
+
+```
+public String paymentGlobalFallback() {
+        return "服务器繁忙，请稍后再试o(╥﹏╥)o";
+    }
+```
+
+#### FeignFallback解耦配置
+
+在service接口上声明注解指定fallback的类
+
+```
+@FeignClient(value = "CLOUD-PROVIDER-PAYMENT-HYSTRIX", fallback = PaymentHystrixFallbackServiceImpl.class)
+```
+
+实现这个接口中的所有方法，实现方法为fallback的处理方法
+
+```
+@Component
+public class PaymentHystrixFallbackServiceImpl implements PaymentHystrixService {
+    @Override
+    public String paymentReturnOK(Integer id) {
+        return "paymentReturnOK繁忙 o(╥﹏╥)o";
+    }
+
+    @Override
+    public String paymentReturnTimeout(Integer id) {
+        return "paymentReturnTimeout繁忙 o(╥﹏╥)o";
+    }
+}
+```
+
+
+
+
+
+
+
+### 服务熔断
+
+类比保险丝达到最大服务访问后，直接拒绝访问，拉闸限电，然后调用服务降级的方法并返回友好提示
+
+就是保险丝：服务的降级 -> 进而熔断 -> 恢复调用链路
+
+### 服务限流
+
+秒杀高并发等操作，严禁一窝蜂的过来拥挤，大家排队，一秒钟N个，有序进行
