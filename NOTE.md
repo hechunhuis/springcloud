@@ -1,3 +1,7 @@
+[TOC]
+
+
+
 # 一. 微服务架构概述
 
 ## 1. 什么是微服务
@@ -22,19 +26,21 @@
 
 # 二. 技术学习路线
 
-服务注册中心：[Eureka](#三. Eureka服务注册中心) -> **[Zookeeper](#四. Zookeeper) -> [Consul](#五. Consul) -> Nacos**
 
-服务调用：**[Ribbon](#六. Ribbon负载均衡) -> LoadBalancer**
 
-服务调用2：Feign -> **[OpenFeign](#七. OpenFeign)**
+服务注册中心：[Eureka](#三. Eureka服务注册中心)【**×**】 -> [Zookeeper](#四. Zookeeper)【√】 -> [Consul](#五. Consul)【√】 -> Nacos【√】
 
-服务降级：Hystrix -> **resilience4j -> sentinel**
+服务调用：**[Ribbon](#六. Ribbon负载均衡)【√】 -> LoadBalancer【√】**
 
-服务网关：Zuul -> Zuul2 -> **gateway**
+服务调用2：Feign【**×**】 -> **[OpenFeign](#七. OpenFeign)【√】**
 
-服务配置：Config -> **Nacos**
+服务降级：Hystrix【**×**】 -> **resilience4j 【√】-> sentinel【√】**
 
-服务总线：Bus -> **Nacos**
+服务网关：Zuul 【**×**】-> Zuul2【！】 -> **gateway**【√】
+
+服务配置：Config【**×**】 -> **Nacos**【√】
+
+服务总线：Bus【**×**】 -> **Nacos【√】**
 
 # 三. Eureka服务注册中心（已停更）
 
