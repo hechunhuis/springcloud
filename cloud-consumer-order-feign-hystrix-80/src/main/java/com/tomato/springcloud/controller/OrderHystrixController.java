@@ -1,5 +1,7 @@
 package com.tomato.springcloud.controller;
 
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import com.tomato.springcloud.service.PaymentHystrixService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,8 +30,15 @@ public class OrderHystrixController {
     }
 
     @GetMapping("consumer/payment/hystrix/timeout/{id}")
+    @HystrixCommand(fallbackMethod = "paymentReturnTimeoutHandler", commandProperties = {
+            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds",value = "1500")
+    })
     public String paymentReturnTimeout(@PathVariable("id") Integer id) {
         String result = paymentHystrixService.paymentReturnTimeout(id);
         return result;
+    }
+
+    public String paymentReturnTimeoutHandler(@PathVariable("id") Integer id) {
+        return "我是消费者，支付服务繁忙或自检出错，请检查o(╥﹏╥)o";
     }
 }
