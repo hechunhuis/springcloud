@@ -371,7 +371,7 @@ public class PaymentHystrixFallbackServiceImpl implements PaymentHystrixService 
 
 
 
-### 服务熔断
+### 服务熔断（服务端）
 
 #### 概述
 
@@ -491,3 +491,6 @@ tips：如果我们没有为命令实现降级逻辑或者在降级处理中抛�
 ### 服务限流
 
 秒杀高并发等操作，严禁一窝蜂的过来拥挤，大家排队，一秒钟N个，有序进行
+
+### 图形化面板
+
