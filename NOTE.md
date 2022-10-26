@@ -1,3 +1,7 @@
+[TOC]
+
+
+
 # 一. 微服务架构概述
 
 ## 1. 什么是微服务
@@ -22,21 +26,23 @@
 
 # 二. 技术学习路线
 
-服务注册中心：[Eureka](#三. Eureka服务注册中心) -> **[Zookeeper](#四. Zookeeper) -> [Consul](#五. Consul) -> Nacos**
 
-服务调用：**[Ribbon](#六. Ribbon负载均衡) -> LoadBalancer**
 
-服务调用2：Feign -> **[OpenFeign](#七. OpenFeign)**
+服务注册中心：[Eureka](#三. Eureka服务注册中心)【**×**】 -> [Zookeeper](#四. Zookeeper)【√】 -> [Consul](#五. Consul)【√】 -> Nacos【√】
 
-服务降级：Hystrix -> **resilience4j -> sentinel**
+服务调用：**[Ribbon](#六. Ribbon负载均衡)【√】 -> LoadBalancer【√】**
 
-服务网关：Zuul -> Zuul2 -> **gateway**
+服务调用2：Feign【**×**】 -> **[OpenFeign](#七. OpenFeign)【√】**
 
-服务配置：Config -> **Nacos**
+服务降级：Hystrix【**×**】 -> **resilience4j 【√】-> sentinel【√】**
 
-服务总线：Bus -> **Nacos**
+服务网关：Zuul 【**×**】-> Zuul2【！】 -> **gateway**【√】
 
-# 三. Eureka服务注册中心
+服务配置：Config【**×**】 -> **Nacos**【√】
+
+服务总线：Bus【**×**】 -> **Nacos【√】**
+
+# 三. Eureka服务注册中心（已停更）
 
 ## 1. 什么是服务治理
 
@@ -259,4 +265,232 @@ logging:
     # feign日志以什么级别监控哪个接口
     com.tomato.springcloud.service.PaymentFeignService: debug
 ```
+
+# 八. Hystrix断路器(已停更)
+
+## 1. 概述
+
+​	Hystrix是一个用于处理分布式系统的延迟和容错的开源库，在分布式系统里，许多依赖不可避免的会调用失败，比如超时、异常等，Hystrix能够保证在一个依赖出问题的情况下，不会导致整体服务失败，避免级联故障，以提高分布式系统的弹性。
+
+​	“断路器”本身是一种开关装置，当某个服务单元发生故障之后，通过断路器的故障监控（类似熔断保险丝），向调用方向返回一个符合预期的、可处理的备选响应（FallBack），而不是长时间的等待或者抛出调用方无法处理的异常，这样就保证了服务调用方的线程不会被长时间、不必要的占用，从而避免了故障在分布式系统中的蔓延，乃至雪崩。
+
+## 2. 作用
+
+服务降级
+
+服务熔断
+
+接近实时的监控
+
+## 3. 官网资料 
+
+http://github.com/Netfix/Hystrix/wiki/How-To-Use
+
+## 4.Hystrix重要概念
+
+### 服务降级（一般配置在客户端）
+
+比如服务器忙，请稍后再试，不让客户端等待并立刻返回一个友好提示，fallback
+
+哪些情况会触发降级
+
+1. 程序运行异常
+2. 超时
+3. 服务熔断触发服务降级
+4. 线程池/信号量打满也会导致服务降级
+
+**maven依赖：**
+
+```xml
+<dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+        </dependency>
+```
+
+启动类添加
+
+```java
+@EnableHystrix
+```
+
+#### 自定义服务降级
+
+在消费者controller的路由方法上添加一下代码，并添加指定fallback方法【paymentReturnTimeoutHandler】，设置超时1.5秒自动返回【paymentReturnTimeoutHandler】的处理
+
+```java
+@HystrixCommand(fallbackMethod = "paymentReturnTimeoutHandler", commandProperties = {
+            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds",value = "1500")
+    })
+```
+
+#### 全局服务降级
+
+在Controller路由上添加默认属性
+
+```java
+@DefaultProperties(defaultFallback = "paymentGlobalFallback")
+```
+
+在路由中添加注解@HystrixCommand，并添加方法【paymentGlobalFallback】
+
+```
+public String paymentGlobalFallback() {
+        return "服务器繁忙，请稍后再试o(╥﹏╥)o";
+    }
+```
+
+#### FeignFallback解耦配置
+
+在service接口上声明注解指定fallback的类
+
+```
+@FeignClient(value = "CLOUD-PROVIDER-PAYMENT-HYSTRIX", fallback = PaymentHystrixFallbackServiceImpl.class)
+```
+
+实现这个接口中的所有方法，实现方法为fallback的处理方法
+
+```
+@Component
+public class PaymentHystrixFallbackServiceImpl implements PaymentHystrixService {
+    @Override
+    public String paymentReturnOK(Integer id) {
+        return "paymentReturnOK繁忙 o(╥﹏╥)o";
+    }
+
+    @Override
+    public String paymentReturnTimeout(Integer id) {
+        return "paymentReturnTimeout繁忙 o(╥﹏╥)o";
+    }
+}
+```
+
+
+
+
+
+
+
+### 服务熔断（服务端）
+
+#### 概述
+
+类比保险丝达到最大服务访问后，直接拒绝访问，拉闸限电，然后调用服务降级的方法并返回友好提示
+
+就是保险丝：服务的降级 -> 进而熔断 -> 恢复调用链路
+
+#### 熔断类型
+
+​	打开：请求不再进行调用当前服务，内部设置时钟一般为MTTR（平均故障处理时间），当打开时长达到所设时钟则进入半熔断状态
+
+​	关闭：熔断关闭不会对服务进行熔断
+
+​	半开：部分请求根据规则调用当前服务，如果请求成功且符合规则则认为当前服务恢复正常，关闭熔断
+
+#### 断路器在什么情况下开始起作用
+
+**断路器的三个重要参数**
+
+1. **快照时间窗**：断路器确定是否打开需要统计一些请求和错误数据，而统计的时间范围就是快照时间窗，默认为最近的10秒。
+2. **请求总数阈值**：在快照时间窗内，必须满足请求总数阈值才有资格熔断。默认为20，意味着在10秒内，如果该hystrix命令的调用次数不足20次，即使所有的请求都超时或其他失败原因，断路器都不会打开。
+3. **错误百分比阈值**：当请求总数在快照时间窗内超过阈值，比如发生了30次调用，如果在这30次调用中，有15次发生了超时异常，也就是超过50%的错误百分比，在默认设定50%阈值情况下，这时候就会将断路器打开。
+
+#### 断路器开启或者关闭的条件
+
+1. 当满足一定的阈值的时候（默认10秒内超过20个请求次数）
+2. 当失败率达到一定的时候（默认10秒内超过50%的请求失败）
+3. 到达以上阈值，断路器将会开启
+4. 当开启的时候，所有请求都不会进行转发
+5. 一段时间之后（默认是5秒），这个时候断路器是半开状态，会让其中一个请求进行转发。如果成功，断路器会关闭，若失败，继续开启。重复4和5
+
+#### 断路器打开之后
+
+1. 再有请求调用的时候，将不会调用主逻辑，而是直接调用降级fallback。通过断路器，实现了自动地发现错误并将降级逻辑切换为主逻辑，减少响应延迟的效果。
+
+2. 原来的主逻辑要如何恢复呢？
+
+   对于这一问题，hystrix也为我们实现了自动恢复功能。当断路器打开，对主逻辑进行熔断之后，hystrix会启动一个休眠时间窗，在这个时间窗内，降级逻辑是临时的成主逻辑，当休眠时间窗到期，断路器将进入半开状态，释放一次请求到原来的主逻辑上，如果此次请求正常返回，那么断路器将会继续闭合，主逻辑恢复，如果这次请求依然有问题，断路器继续进入打开状态，休眠时间窗重新计时。
+
+#### All配置
+
+```
+Command属性主要用来控制HystrixCommand命令的行为，它主要分下面的类别：
+
+1、Execution：用来控制HystrixCommand.run()的执行
+execution.isolation.strategy：该属性用来设置HystrixCommand.run()执行的隔离策略。默认为THREAD。
+execution.isolation.thread.timeoutInMilliseconds：该属性用来配置HystrixCommand执行的超时时间，单位为毫秒。
+execution.timeout.enabled：该属性用来配置HystrixCommand.run()的执行是否启用超时时间。默认为true。
+execution.isolation.thread.interruptOnTimeout：该属性用来配置当HystrixCommand.run()执行超时的时候是否要它中断。
+execution.isolation.thread.interruptOnCancel：该属性用来配置当HystrixCommand.run()执行取消时是否要它中断。
+execution.isolation.semaphore.maxConcurrentRequests：当HystrixCommand命令的隔离策略使用信号量时，该属性用来配置信号量的大小。当最大并发请求达到该设置值时，后续的请求将被拒绝。
+
+2、Fallback：用来控制HystrixCommand.getFallback()的执行
+fallback.isolation.semaphore.maxConcurrentRequests：该属性用来设置从调用线程中允许HystrixCommand.getFallback()方法执行的最大并发请求数。当达到最大并发请求时，后续的请求将会被拒绝并抛出异常。
+fallback.enabled：该属性用来设置服务降级策略是否启用，默认是true。如果设置为false，当请求失败或者拒绝发生时，将不会调用HystrixCommand.getFallback()来执行服务降级逻辑。
+
+3、Circuit Breaker：用来控制HystrixCircuitBreaker的行为。
+circuitBreaker.enabled：确定当服务请求命令失败时，是否使用断路器来跟踪其健康指标和熔断请求。默认为true。
+circuitBreaker.requestVolumeThreshold：用来设置在滚动时间窗中，断路器熔断的最小请求数。例如，默认该值为20的时候，如果滚动时间窗（默认10秒）内仅收到19个请求，即使这19个请求都失败了，断路器也不会打开。
+circuitBreaker.sleepWindowInMilliseconds：用来设置当断路器打开之后的休眠时间窗。休眠时间窗结束之后，会将断路器设置为“半开”状态，尝试熔断的请求命令，如果依然时候就将断路器继续设置为“打开”状态，如果成功，就设置为“关闭”状态。
+circuitBreaker.errorThresholdPercentage：该属性用来设置断路器打开的错误百分比条件。默认值为50，表示在滚动时间窗中，在请求值超过requestVolumeThreshold阈值的前提下，如果错误请求数百分比超过50，就把断路器设置为“打开”状态，否则就设置为“关闭”状态。
+circuitBreaker.forceOpen：该属性默认为false。如果该属性设置为true，断路器将强制进入“打开”状态，它会拒绝所有请求。该属性优于forceClosed属性。
+circuitBreaker.forceClosed：该属性默认为false。如果该属性设置为true，断路器强制进入“关闭”状态，它会接收所有请求。如果forceOpen属性为true，该属性不生效。
+
+4、Metrics：该属性与HystrixCommand和HystrixObservableCommand执行中捕获的指标相关。
+metrics.rollingStats.timeInMilliseconds：该属性用来设置滚动时间窗的长度，单位为毫秒。该时间用于断路器判断健康度时需要收集信息的持续时间。断路器在收集指标信息时会根据设置的时间窗长度拆分成多个桶来累计各度量值，每个桶记录了一段时间的采集指标。例如，当为默认值10000毫秒时，断路器默认将其分成10个桶，每个桶记录1000毫秒内的指标信息。
+metrics.rollingStats.numBuckets：用来设置滚动时间窗统计指标信息时划分“桶”的数量。默认值为10。
+metrics.rollingPercentile.enabled：用来设置对命令执行延迟是否使用百分位数来跟踪和计算。默认为true，如果设置为false，那么所有的概要统计都将返回-1。
+metrics.rollingPercentile.timeInMilliseconds：用来设置百分位统计的滚动窗口的持续时间，单位为毫秒。
+metrics.rollingPercentile.numBuckets：用来设置百分位统计滚动窗口中使用桶的数量。
+metrics.rollingPercentile.bucketSize：用来设置每个“桶”中保留的最大执行数。
+metrics.healthSnapshot.intervalInMilliseconds：用来设置采集影响断路器状态的健康快照的间隔等待时间。
+
+5、Request Context：涉及HystrixCommand使用HystrixRequestContext的设置。
+requestCache.enabled：用来配置是否开启请求缓存。
+requestLog.enabled：用来设置HystrixCommand的执行和事件是否打印到日志的HystrixRequestLog中。
+```
+
+
+
+#### 服务提供者Service
+
+```java
+@Override
+    @HystrixCommand(fallbackMethod = "paymentCircuitBreakerFallback", commandProperties = {
+            @HystrixProperty(name = "circuitBreaker.enabled", value = "true"),//是否开启断路器
+            @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"), // 请求次数
+            @HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "10000"), // 时间窗口期
+            @HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "60") // 失败率达到60%多少后跳闸
+    })
+    public String paymentCircuitBreaker(Integer id) {
+        if (id < 0) {
+            throw new RuntimeException("*******id 不能为负数");
+        }
+        String serialNumber = IdUtil.simpleUUID();
+        return Thread.currentThread().getName() + "\t" + "调用成功，流水号：" + serialNumber;
+    }
+    public String paymentCircuitBreakerFallback(@PathVariable("id") Integer id) {
+        return "id 不能负数，请稍后再试，o(╥﹏╥)o id:" + id;
+    }
+```
+
+#### 工作流程
+
+1. 创建HystrixCommand（用在依赖的服务返回单个操作结果的时候）或HystrixObserableCommand（用在依赖的服务返回多个操作结果的时候）对象
+2. 命令执行，其中HystrixCommand实现了下面前两种执行方式；而HystrixObservableCommand实现了后两种方式；execute（）；同步执行，从以来的服务返回一个单一的结果对象，或是在发生错误的时候抛出异常，queue()；异步执行，直接返回一个Future对象，其中包含了服务执行结束时要返回的单一结果对象，observe();返回Observable对象，他代表了操作的多个结果，他是一个Hot Obserable（不论“事件源”是否有“订阅者”，都会在创建后对事件进行发布，所以对于Hot Observable的每一个“订阅者”都有可能是从“事件源"的中途开始的，并可能只是看到了整个操作的局部过程），ToObservable()；同样会返回Observable对象，也代表了操作的多个结果，但它返回的是一个Cold Observable（没有”订阅者“的时候并不会发布事件，而是进行等待，直到有“订阅者”之后才发布事件，所以对于Cold Observable的订阅者，他可以保证从一开始看到整个操作的全部过程）。
+3. 若当前命令的请求缓存功能是被启用的，并且该命令缓存命中，那么缓存的结果会立即以Observable对象的形式返回。
+4. 检查断路器是否为打开状态，如果断路器是打开的，那么Hystrix不会执行命令，而是转接到fallback 处理逻辑（第8步）；如果断路器是关闭的，检查是否有可用资源来执行命令（第5步）。
+5. 线程池/请求队列/信号量是否占满，如果命令依赖服务的专有线程池和请求队列，或者信号量（不使用线程池的时候）已经被占满，那么Hystrix也不会执行命令，而是转移到fallback处理逻辑（第8步）
+6. Hystrix会根据我们编写的方法来决定采取什么样的方式去请求依赖服务，HystrixCommand.run()；返回一个单一的结果，或者抛出异常，HystrixObservableCommand.construct()；返回一个Observable对象来发射多个结果，或通过onError发送错误通知。
+7. Hystrix会将“成功”、“失败”、“拒绝”、“超时”等信息报告给断路器，而断路器会维护一组计数器来统计这些数据，断路器会使用这些统计数据来决定是否要将断路器打开，来对某个依赖服务的请求进行“熔断/短路”。
+8. 当命令执行失败的时候，Hystrix会进入fallback尝试回退处理，我们通常也称该操作为“服务降级”，而能够引起服务降级处理的情况有下面几种：第4步：当前命令处于“熔断/短路”状态，断路器是打开的时候，第5步：当前命令的线程池、请求队列或者信号量被占满的时候，第6步：HystrixObservableCommand。construct()或HystrixCommand.run()抛出异常的时候。
+9. 当Hystrix命令执行成功之后，他会将处理结果直接返回或是以Observable的形式返回。
+
+tips：如果我们没有为命令实现降级逻辑或者在降级处理中抛出了异常，Hystrix依然会返回一个Observable对象，但是它不会发射任何结果数据，而是通过onERROR方法通知命令立即中断请求，并通过onError()方法将引起命令失败的异常发送给调用者。
+
+### 服务限流
+
+秒杀高并发等操作，严禁一窝蜂的过来拥挤，大家排队，一秒钟N个，有序进行
+
+### 图形化面板
 
