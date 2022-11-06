@@ -42,7 +42,7 @@
 
 服务总线：Bus【**×**】 -> **Nacos【√】**
 
-# 三. Eureka服务注册中心（已停更）
+# 三. Eureka(服务注册中心)（已停更）
 
 ## 1. 什么是服务治理
 
@@ -66,7 +66,7 @@ Eureka采用了CS的设计架构，Eureka Server作为服务注册功能的服�
 
   是一个Java客户端，用于简化Eureka Server的交互，客户端同时也具备一个内置的、使用轮询负载算法的负载均衡器。在应用启动后，将会向Eureka Server发送心跳（默认周期为30秒）。如果Eureka Server在多个心跳周期内没有接收到某个节点的心跳，EurekaServer将会从服务注册表中将这个服务节点移除（默认90秒）。
 
-# 四. Zookeeper
+# 四. Zookeeper(服务注册中心)
 
 ZooKeeper是一个[分布式](https://baike.baidu.com/item/%E5%88%86%E5%B8%83%E5%BC%8F/19276232?fromModule=lemma_inlink)的，开放源码的[分布式应用程序](https://baike.baidu.com/item/%E5%88%86%E5%B8%83%E5%BC%8F%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F/9854429?fromModule=lemma_inlink)协调服务，是[Google](https://baike.baidu.com/item/Google?fromModule=lemma_inlink)的Chubby一个[开源](https://baike.baidu.com/item/%E5%BC%80%E6%BA%90/246339?fromModule=lemma_inlink)的实现，是Hadoop和[Hbase](https://baike.baidu.com/item/Hbase/7670213?fromModule=lemma_inlink)的重要组件。它是一个为分布式应用提供一致性服务的软件，提供的功能包括：配置维护、域名服务、分布式同步、组服务等。
 
@@ -76,7 +76,7 @@ ZooKeeper包含一个简单的原语集，提供Java和C的接口。
 
 ZooKeeper代码版本中，提供了分布式独享锁、选举、队列的接口，代码在$zookeeper_home\src\recipes。其中分布锁和队列有[Java](https://baike.baidu.com/item/Java/85979?fromModule=lemma_inlink)和C两个版本，选举只有Java版本。
 
-# 五. Consul
+# 五. Consul(服务注册中心)
 
 Consul是HashiCorp公司推出的开源工具，用于实现分布式系统的服务发现与配置。 Consul是分布式的、高可用的、可横向扩展的。它具备以下特性 :
 
@@ -93,7 +93,7 @@ Consul是HashiCorp公司推出的开源工具，用于实现分布式系统的�
 支持 http 和 dns 协议接口. zookeeper 的集成较为复杂, etcd 只支持 http 协议. 
 官方提供web管理界面, etcd 无此功能.
 
-# 六. Ribbon负载均衡
+# 六. Ribbon(负载均衡)
 ## 1. 负载均衡算法策略
 1.com.netflix.loadbalancer.RoundRobinRule 轮询
 2.com.netflix.loadbalancer.RandomRule     随机
@@ -168,7 +168,7 @@ rest接口请求次数 % 服务器集群总数 = 实际调用服务器位置下�
 
 CAS + 自旋锁
 
-# 七. OpenFeign
+# 七. OpenFeign(服务调用)
 
 ## 1. Feign概述
 
@@ -494,3 +494,254 @@ tips：如果我们没有为命令实现降级逻辑或者在降级处理中抛�
 
 ### 图形化面板
 
+# 九. Zuul&Zuul2(服务网关)
+
+
+
+# 十. GateWay(服务网关)
+
+## 1. 概述简介
+
+#### 是什么？
+
+springcloud gateway 是SpringCloud的一个全新的项目，基于Spring 5.0 + Spring Boot 2.0和Project Reactor等技术开发的网关，它旨在为微服务架构提供一种简单有效的统一的API路由管理方式。
+
+**SpringCloud Gateway 作为SpringCloud生态系统中的网关，目标是代替Zuul，在SpringCloud 2.0 以上版本中，没有对新版本的Zuul 2.0以上最新高性能版本进行集成，仍然还是使用的Zuul 1.x非Reactor模式的老版本。而为了 提升网关的性能，SpringCloud Gateway是基于WebFlux框架实现的，而WebFlux框架底层则使用了高性能的Reactor模式通信框架Netty。**
+
+SpringCloud Gateway的目标通过统一的路由方式且基于Filter链的方式提供了网关基本的功能，例如：安全，监控/指标，和限流。
+
+#### 能干嘛？
+
+反向代理
+
+鉴权
+
+流量控制
+
+熔断
+
+日志监控
+
+#### 微服务架构中网关在哪里
+
+外部请求(手持终端、Html5、Open接口) -> 负载均衡 -> **网关** -> 微服务
+
+#### 有Zuul了怎么又出来了gateway
+
+##### 为什么选择Gateway
+
+1. Gateway是基于**异步非阻塞模型**上进行开发的，性能方面不需要担心。虽然Netfix早就发布了最新的Zuul2.x，但Spring Cloud貌似没有整合计划。而且Netflix相关组件都宣布进入维护期。
+
+2. SpringCloud具有一下特性：
+
+   **基于Spring Framework5，Project Reactor和Springboot 2.0 进行构建**
+
+   **动态路由：能够匹配任何请求属性；**
+
+   **可以对路由指定Predicate（断言）和Filter（过滤器）**
+
+   **集成Hystrix的断路器功能**
+
+   **集成SpringCloud服务发现功能；**
+
+   **易于编写的Predicate（断言）和Filter（过滤器）；**
+
+   **请求限流功能；**
+
+   **支持路径重写。**
+
+3. SpringCloud Gateway与Zuul的区别
+
+   
+
+#### Zuul1.x模型
+
+#### GateWay模型：WebFlux是什么
+
+​	在servlet3.1之后有了**异步非阻塞**的支持。而WebFlux是一个典型非阻塞异步的框架，它的核心是基于Reactor的相关API实现的。相对于传统的Web框架来说，它可以运行在诸如Netty，Undertow以及支持Servlet3.1的容器上。非阻塞式+函数式编程(Spring5必须让你使用Java8)
+
+## 2. 三大核心概念
+
+### Route（路由）
+
+路由是构建网关的基本模块，它由ID、目标URI，一系列的断言和过滤器组成，如果断言为true则匹配该路由
+
+### Predicate（断言）
+
+参考的是Java8的java.util.function.Predicate
+
+开发人员可以匹配HTTP请求中的所有内容（例如请求头或请求参数），如果请求与断言相匹配则进行路由
+
+### Filter（过滤）
+
+指的是Spring框架中GatewayFilter的实例，使用过滤器，可以再请求被路有前或者之后对请求进行修改。
+
+### 总体
+
+web请求，通过一些匹配条件，定位到真正的服务节点。并在这个转发过程的前后，进行一些精细化控制。
+
+Predicate就是我们的匹配条件；
+
+Filter可以理解为一个无所不能的拦截器，有了这两个元素，再加上目标URI，就可以实现一个具体的路由了
+
+## 3. GateWay工作流程
+
+流程：Gateway Client —> SpringCloudGateway【（Gateway Handler Mapping）->（Gateway Web handler
+
+）->（Filter|Filter|Filter|Proxy Filter）】—>Proxied Service
+
+客户端向SpringCloudGateway发出请求。然后在Gateway Handler Mapping中找到与请求相匹配的路由，将其发送到Gateway Web handler.
+
+Handler再通过指定的过滤链来将请求发送到我们实际的服务执行业务逻辑，然后返回。
+
+过滤器之间用虚线分开是因为过滤器可能会在发送代理请求之前（“pre"）或之后（”post"）执行业务逻辑。
+
+Filter在“pre”类型的过滤器可以做参数校验、权限校验、流量监控、日志输出、协议转换等，
+
+在“post”类型的过滤器中可以做响应内容、响应头的修改，日志的输出，流量监控等有着非常重要的作用。
+
+## 4. 入门配置
+
+#### pom依赖
+
+```xml
+<dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway</artifactId>
+        </dependency>
+```
+
+#### yml配置
+
+```yaml
+server:
+  port: 9527
+spring:
+  application:
+    name: cloud-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: cloud_provider_payment_8001_get # 路由ID，没有固定ID，但要保证唯一
+          uri: http://localhost:8001 # 匹配后提供服务的路由地址
+          predicates:
+            - Path=/payment/get/** # 断言，路径相匹配的进行路由
+
+        - id: cloud_provider_payment_8001_lb # 路由ID，没有固定ID，但要保证唯一
+          uri: http://localhost:8001 # 匹配后提供服务的路由地址
+          predicates:
+            - Path=/payment/lb/** # 断言，路径相匹配的进行路由
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka7001.com:7001/eureka
+  instance:
+    instance-id: ${spring.application.name}-${server.port}
+```
+
+#### 启动类配置
+
+```java
+package com.tomato.springcloud;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
+
+/**
+ * @author : tomato<hechunhui_email@163.com>
+ * @date : 2022/11/6 13:12
+ * @className : GateWayMain9527
+ * @description: TODO
+ */
+@SpringBootApplication
+@EnableEurekaClient
+public class GateWayMain9527 {
+    public static void main(String[] args) {
+        SpringApplication.run(GateWayMain9527.class, args);
+    }
+}
+
+```
+
+### 配置断言、路由的两种方式
+
+#### yml
+
+```yaml
+spring:
+  application:
+    name: cloud-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: cloud_provider_payment_8001_get # 路由ID，没有固定ID，但要保证唯一
+          uri: http://localhost:8001 # 匹配后提供服务的路由地址
+          predicates:
+            - Path=/payment/get/** # 断言，路径相匹配的进行路由
+
+        - id: cloud_provider_payment_8001_lb # 路由ID，没有固定ID，但要保证唯一
+          uri: http://localhost:8001 # 匹配后提供服务的路由地址
+          predicates:
+            - Path=/payment/lb/** # 断言，路径相匹配的进行路由
+```
+
+
+
+#### 代码中注入RouteLocator的Bean
+
+```java
+package com.tomato.springcloud.config;
+
+import org.springframework.cloud.gateway.route.RouteLocator;
+import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * @author : tomato<hechunhui_email@163.com>
+ * @date : 2022/11/6 13:41
+ * @className : GateWayConfig
+ * @description: TODO
+ */
+@Configuration
+public class GateWayConfig {
+
+    private final String ROUTE_ID_GUONEI = "route_path_baidu_guonei";
+    private final String ROUTE_ID_GAME = "route_path_baidu_game";
+
+    private final String LOCAL_PATH_GUONEI = "guonei";
+    private final String LOCAL_PATH_GAME = "game";
+    private final String ROUTE_PATH = "https://news.baidu.com";
+
+    @Bean
+    public RouteLocator customRouteLocatorGuoNei(RouteLocatorBuilder builder) {
+        // 访问localhost:port/guonei -> https://news.baidu.com/guonei
+        RouteLocatorBuilder.Builder routes = builder.routes();
+        routes.route(ROUTE_ID_GUONEI,
+                r -> r.path("/" + LOCAL_PATH_GUONEI).uri(ROUTE_PATH + "/" + LOCAL_PATH_GUONEI))
+                .build();
+        return routes.build();
+    }
+
+    @Bean
+    public RouteLocator customRouteLocatorGame(RouteLocatorBuilder builder) {
+        // 访问localhost:port/game -> https://news.baidu.com/game
+        RouteLocatorBuilder.Builder routes = builder.routes();
+        routes.route(ROUTE_ID_GAME,
+                r -> r.path("/" + LOCAL_PATH_GAME).uri(ROUTE_PATH + "/" + LOCAL_PATH_GAME))
+                .build();
+        return routes.build();
+    }
+}
+```
+
+
+
+## 5. 通过微服务名实现动态路由
+
+## 6. Predicate的使用
+
+## 7. Filter的使用
