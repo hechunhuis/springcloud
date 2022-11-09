@@ -1,0 +1,52 @@
+server:
+  port: 9527
+spring:
+  application:
+    name: cloud-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true # 开启从注册中心动态创建路由功能，利用微服务名进行路由
+      routes:
+        - id: cloud_provider_payment_8001_get # 路由ID，没有固定ID，但要保证唯一
+#          uri: http://localhost:8001 # 匹配后提供服务的路由地址
+          uri: lb://cloud-payment-service
+          predicates:
+            # Path Route Predicate，断言，路径相匹配的进行路由
+            - Path=/payment/get/**
+            # After Route Predicate，指定在某个时间后才能访问，否则报404
+            #- After=2022-11-09T18:10:00.485+08:00[Asia/Shanghai]
+            # Before Route Predicate，指定在某个时间前才能访问，否则报404
+            #- Before=2022-11-09T18:10:00.485+08:00[Asia/Shanghai]
+            # Between Route Predicate，指定在某个时间之间才能访问，否则报404
+            #- Between=2022-11-09T18:10:00.485+08:00[Asia/Shanghai],2022-11-09T18:10:00.485+08:00[Asia/Shanghai]
+            # Cookie Route Predicate，参数：[cookiename，正则表达式]
+            #- Cookie=username,zzz
+            # Header Route Predicate,参数：[属性名,正则表达式]
+            #- Header=X-Request-Id, \d+
+            # Host Route Predicate,参数：[正则表达式]
+            #- Host=***.tomato.com
+            # Method Route Predicate,参数：[请求方式]
+            #- Method=get
+            # Query Route Predicate 根据查询条件，需要满足{url}?key=value,value支持正则表达式
+            #- Query=name,\d+
+
+        - id: cloud_provider_payment_8001_lb # 路由ID，没有固定ID，但要保证唯一
+#          uri: http://localhost:8001 # 匹配后提供服务的路由地址
+          uri: lb://cloud-payment-service
+          predicates:
+            - Path=/payment/lb/** # 断言，路径相匹配的进行路由
+#        - filters:
+#            - AddRequestParameter=X-Request-Id,1024 #过滤器工厂会在匹配的请求头，加上一对请求头，名称为X-Request-Id，值为1024
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka7001.com:7001/eureka
+  instance:
+    instance-id: ${spring.application.name}-${server.port}
+
+
+
