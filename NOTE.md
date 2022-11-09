@@ -1,4 +1,4 @@
-[TOC]
+#### 目录 一. 微服务架构概述1. 什么是微服务2. Spring Cloud简介3. SpringCloud技术栈二. 技术学习路线三. Eureka(服务注册中心)（已停更）1. 什么是服务治理2. 什么是服务注册与发现3. Eureka常用的两个组件四. Zookeeper(服务注册中心)五. Consul(服务注册中心)1. 优势六. Ribbon(负载均衡)1. 负载均衡算法策略2. 替换负载规则3. 原理七. OpenFeign(服务调用)1. Feign概述2. OpenFeign与Feign的区别3. OpenFeign使用4. 超时设置5. OpenFeign HTTP 日志输出八. Hystrix断路器(已停更)1. 概述2. 作用3. 官网资料4.Hystrix重要概念服务降级（一般配置在客户端）自定义服务降级全局服务降级FeignFallback解耦配置服务熔断（服务端）概述熔断类型断路器在什么情况下开始起作用断路器开启或者关闭的条件断路器打开之后All配置服务提供者Service工作流程服务限流图形化面板九. Zuul&Zuul2(服务网关)十. GateWay(服务网关)1. 概述简介是什么？能干嘛？微服务架构中网关在哪里有Zuul了怎么又出来了gateway为什么选择GatewayZuul1.x模型GateWay模型：WebFlux是什么2. 三大核心概念Route（路由）Predicate（断言）Filter（过滤）总体3. GateWay工作流程4. 入门配置pom依赖yml配置启动类配置配置断言、路由的两种方式yml代码中注入RouteLocator的Bean5. 通过微服务名实现动态路由6. Predicate的使用7. Filter的使用
 
 
 
@@ -742,6 +742,93 @@ public class GateWayConfig {
 
 ## 5. 通过微服务名实现动态路由
 
+```yaml
+server:
+  port: 9527
+spring:
+  application:
+    name: cloud-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true # 开启从注册中心动态创建路由功能，利用微服务名进行路由
+      routes:
+        - id: cloud_provider_payment_8001_get # 路由ID，没有固定ID，但要保证唯一
+#          uri: http://localhost:8001 # 匹配后提供服务的路由地址
+          uri: lb://cloud-payment-service
+          predicates:
+            - Path=/payment/get/** # 断言，路径相匹配的进行路由
+
+        - id: cloud_provider_payment_8001_lb # 路由ID，没有固定ID，但要保证唯一
+#          uri: http://localhost:8001 # 匹配后提供服务的路由地址
+          uri: lb://cloud-payment-service
+          predicates:
+            - Path=/payment/lb/** # 断言，路径相匹配的进行路由
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka7001.com:7001/eureka
+  instance:
+    instance-id: ${spring.application.name}-${server.port}
+
+```
+
+
+
 ## 6. Predicate的使用
+
+#### 时间字符串获取方法：
+
+```java
+public class Test {
+    public static void main(String args[]) {
+        ZonedDateTime zonedDateTime = ZonedDateTime.now()
+		System.out.println(zonedDateTime);
+    }
+}
+```
+
+#### Route Predicate
+
+指明在某个**时间点之后**才能被访问
+
+```yaml
+spring:
+  application:
+    name: cloud-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true # 开启从注册中心动态创建路由功能，利用微服务名进行路由
+      routes:
+        - id: cloud_provider_payment_8001_get # 路由ID，没有固定ID，但要保证唯一
+#          uri: http://localhost:8001 # 匹配后提供服务的路由地址
+          uri: lb://cloud-payment-service
+          predicates:
+          	# Path Route Predicate，断言，路径相匹配的进行路由
+            - Path=/payment/get/** 
+            # After Route Predicate，指定在某个时间后才能访问，否则报404
+            - After=2022-11-09T18:10:00.485+08:00[Asia/Shanghai] 
+            # Before Route Predicate，指定在某个时间前才能访问，否则报404
+            - Before=2022-11-09T18:10:00.485+08:00[Asia/Shanghai] 
+            # Between Route Predicate，指定在某个时间之间才能访问，否则报404
+            - Between=2022-11-09T18:10:00.485+08:00[Asia/Shanghai],2022-11-09T18:10:00.485+08:00[Asia/Shanghai] 
+            # Cookie Route Predicate，参数：[cookiename，正则表达式]
+            - Cookie=username,zzz
+            # Header Route Predicate,参数：[属性名,正则表达式]
+            - Header=X-Request-Id, \d+
+            # Host Route Predicate,参数：[正则表达式]
+            - Host=***.tomato.com
+            # Method Route Predicate,参数：[请求方式]
+            - Method=get
+            # Query Route Predicate 根据查询条件，需要满足{url}?key=value,value支持正则表达式
+            - Query=name,\d+
+```
+
+#### 总结
 
 ## 7. Filter的使用
