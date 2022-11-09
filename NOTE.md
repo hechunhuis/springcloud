@@ -1,5 +1,3 @@
-#### 目录 一. 微服务架构概述1. 什么是微服务2. Spring Cloud简介3. SpringCloud技术栈二. 技术学习路线三. Eureka(服务注册中心)（已停更）1. 什么是服务治理2. 什么是服务注册与发现3. Eureka常用的两个组件四. Zookeeper(服务注册中心)五. Consul(服务注册中心)1. 优势六. Ribbon(负载均衡)1. 负载均衡算法策略2. 替换负载规则3. 原理七. OpenFeign(服务调用)1. Feign概述2. OpenFeign与Feign的区别3. OpenFeign使用4. 超时设置5. OpenFeign HTTP 日志输出八. Hystrix断路器(已停更)1. 概述2. 作用3. 官网资料4.Hystrix重要概念服务降级（一般配置在客户端）自定义服务降级全局服务降级FeignFallback解耦配置服务熔断（服务端）概述熔断类型断路器在什么情况下开始起作用断路器开启或者关闭的条件断路器打开之后All配置服务提供者Service工作流程服务限流图形化面板九. Zuul&Zuul2(服务网关)十. GateWay(服务网关)1. 概述简介是什么？能干嘛？微服务架构中网关在哪里有Zuul了怎么又出来了gateway为什么选择GatewayZuul1.x模型GateWay模型：WebFlux是什么2. 三大核心概念Route（路由）Predicate（断言）Filter（过滤）总体3. GateWay工作流程4. 入门配置pom依赖yml配置启动类配置配置断言、路由的两种方式yml代码中注入RouteLocator的Bean5. 通过微服务名实现动态路由6. Predicate的使用7. Filter的使用
-
 
 
 # 一. 微服务架构概述
@@ -829,6 +827,85 @@ spring:
             - Query=name,\d+
 ```
 
-#### 总结
-
 ## 7. Filter的使用
+
+官网：https://cloud.spring.io/spring-cloud-static/spring-cloud-gateway/2.2.1RELEASE/reference/html/#the-addrequestparameter-gatewayfilter-factory
+
+使用过滤器，可以在请求被路由前或者之后对请求进行修改
+
+路由过滤器可用于修改进入的http请求和返回的http响应，路由过滤器只能指定路由进行使用
+
+SpringCloud Gateway内置了多种路由过滤器，他们都由GatewayFilter的工厂类生产
+
+**生命周期**：pro（之前）、post（之后）
+
+**种类**:GatewayFilter（单一的）、GlobalFilter（全局）
+
+```yaml
+spring:
+  application:
+    name: cloud-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          # 开启从注册中心动态创建路由功能，利用微服务名进行路由
+          enabled: true 
+      routes:
+      	# 路由ID，没有固定ID，但要保证唯一
+        - id: cloud_provider_payment_8001_get 
+          uri: lb://cloud-payment-service
+          filters:
+          	#过滤器工厂会在匹配的请求头，加上一对请求头，名称为X-Request-Id，值为1024
+          	- AddRequestParameter=X-Request-Id,1024 
+```
+
+#### 自定义全局过滤器
+
+可以做全局日志记录、统一网关鉴权
+
+```java
+package com.tomato.springcloud.filter;
+
+import io.netty.util.internal.StringUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.core.Ordered;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
+
+import java.util.Date;
+
+/**
+ * @author : tomato<hechunhui_email@163.com>
+ * @date : 2022/11/9 22:43
+ * @className : MyLogGatewayFilter
+ * @description: 自定义全局过滤器
+ */
+@Component
+@Slf4j
+public class MyLogGatewayFilter implements GlobalFilter, Ordered {
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        log.info("************* come in MyLogGatewayFilter: " + new Date());
+        String uname = exchange.getRequest().getQueryParams().getFirst("uname");
+        if (StringUtil.isNullOrEmpty(uname)) {
+            log.info("******** 用户名为null,非法用户，o(╥﹏╥)o");
+            exchange.getResponse().setStatusCode(HttpStatus.NOT_ACCEPTABLE);
+            return exchange.getResponse().setComplete();
+        }
+        return chain.filter(exchange);
+    }
+
+    @Override
+    public int getOrder() {
+        return 0;
+    }
+}
+```
+
+
+
