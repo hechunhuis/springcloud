@@ -13,6 +13,7 @@ spring:
           # 搜索目录
           search-paths:
             - springcloud-config
+          timeout: 20
       # 读取的分支
       label: master
 

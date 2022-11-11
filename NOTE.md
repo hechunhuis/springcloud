@@ -935,8 +935,349 @@ https://cloud.spring.io/spring-cloud-static/spring-cloud-config/2.2.1.RELEASE/re
 
 ## 4. Config服务端配置与测试
 
+#### pom.xml配置
+
+```yaml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>springcloud</artifactId>
+        <groupId>com.tomato.springcloud</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>cloud-config-center-3344</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-config-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.tomato.springcloud</groupId>
+            <artifactId>cloud-api-commons</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>
+```
+
+#### application.yml
+
+```yaml
+server:
+  port: 3344
+
+
+spring:
+  application:
+    name: cloud-config-center
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/hechunhuis/springcloud-config.git # github上的仓库地址
+          # 搜索目录
+          search-paths:
+            - springcloud-config
+      # 读取的分支
+      label: master
+
+# 服务注册到eureka地址
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka7001.com:7001/eureka
+```
+
+#### 启动类
+
+```java
+package com.tomato.springcloud;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.config.server.EnableConfigServer;
+
+/**
+ * @author : tomato<hechunhui_email@163.com>
+ * @date : 2022/11/10 23:31
+ * @className : CloudCenterMain3344
+ * @description: TODO
+ */
+@SpringBootApplication
+@EnableConfigServer
+public class CloudCenterMain3344 {
+    //增加host文件配置 127.0.0.1 config-3344.com
+    public static void main(String[] args) {
+        SpringApplication.run(CloudCenterMain3344.class, args);
+    }
+}
+
+```
+
+#### 测试
+
+启动7001服务注册中心
+
+启动config3344服务端
+
+浏览器访问：http://localhost:3344/master/config-dev.yml
+
 ## 5. Config客户端配置与测试
 
-## 6. Config客户端之动态刷新
+#### bootstrap.yml与application.yml的区别
+
+application.yml是用户级的资源配置项
+
+bootstrap.yml是系统级的，优先级更高
+
+
+
+SpringCloud 会创建一个“Bootstrap Context”，作为Spring应用的“Application Context”的父上下文。初始化的时候，“Bootstrap Context”负责从外部源加载配置属性并解析配置。这两个上下文共享一个从外部获取的“Environment”。
+
+“Bootstrap”属性有高优先级，默认情况下，他们不会被本地配置覆盖。“Bootstrap Context”和“Application Context”有着不同的约定，所以新增一个“bootstrap.yml”文件，保证“Bootstrap Context”和“Application Context”配置的分离
+
+**要将Client模块下的application.yml文件改为bootstrap.yml**，这是很关键的；
+
+因为bootstrap.yml要比application.yml先加载的，bootstrap.yml优先级高于application.yml
+
+#### pom.xml配置
+
+```yaml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>springcloud</artifactId>
+        <groupId>com.tomato.springcloud</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>cloud-config-client-3355</artifactId>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.tomato.springcloud</groupId>
+            <artifactId>cloud-api-commons</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
+```
+
+#### bootstrap.yml配置
+
+```yaml
+server:
+  port: 3355
+spring:
+  application:
+    name: config-client-3355
+  cloud:
+    config:
+      label: master # 读取的分支
+      name: config # 文件配置前缀
+      profile: dev # 文件配置后缀
+      uri: http://localhost:3344 # config服务端
+
+# 服务注册到eureka地址
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka7001.com:7001/eureka
+
+```
+
+#### 启动类
+
+```java
+package com.tomato.springcloud;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
+
+/**
+ * @author : tomato<hechunhui_email@163.com>
+ * @date : 2022/11/11 18:35
+ * @className : ConfigClientMain3355
+ * @description: TODO
+ */
+@SpringBootApplication
+@EnableEurekaClient
+public class ConfigClientMain3355 {
+    public static void main(String[] args) {
+        SpringApplication.run(ConfigClientMain3355.class, args);
+    }
+}
+
+```
+
+#### 路由测试类
+
+```
+package com.tomato.springcloud.controller;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * @author : tomato<hechunhui_email@163.com>
+ * @date : 2022/11/11 18:45
+ * @className : ConfigClientController
+ * @description: TODO
+ */
+@RestController
+@Slf4j
+public class ConfigClientController {
+
+    //server.port为bootstrap.yml中配置读取到github的文件，文件中的变量
+    @Value("${server.port}")
+    private String serverPort;
+
+    @GetMapping("/server/port")
+    private String getConfigInfo() {
+        return serverPort;
+    }
+}
+
+```
+
+## 6. Config客户端动态刷新之手动版
+
+#### 客户端POM引入actuator监控
+
+```yaml
+<dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+```
+
+#### bootstrap.yml增加暴露监控端口
+
+```yaml
+# 暴露监控端口 解决config服务端刷新，客户端需要重启刷新问题
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+```
+
+#### 增加@RefreshScope业务类Controller修改
+
+```java
+package com.tomato.springcloud.controller;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * @author : tomato<hechunhui_email@163.com>
+ * @date : 2022/11/11 18:45
+ * @className : ConfigClientController
+ * @description: TODO
+ */
+@RestController
+@Slf4j
+@RefreshScope //增加注解
+public class ConfigClientController {
+
+    //server.port为读取到github的配置文件，文件中的变量
+    @Value("${server.port}")
+    private String serverPort;
+
+    @GetMapping("/server/port")
+    private String getConfigInfo() {
+        return serverPort;
+    }
+}
+
+```
+
+#### 注意
+
+**配置后需要手动发送POST请求：curl -X POST "http://localhost:3355/actuator/refresh"，来刷新3355客户端的配置**
+
+**自动刷新参考BUS**
 
 # 十二. SpringCloud Bus 消息总线
+
