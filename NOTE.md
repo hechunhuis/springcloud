@@ -1277,7 +1277,34 @@ public class ConfigClientController {
 
 **配置后需要手动发送POST请求：curl -X POST "http://localhost:3355/actuator/refresh"，来刷新3355客户端的配置**
 
-**自动刷新参考BUS**
+**自动刷新参考SpringCloud Bus 消息总线**
 
 # 十二. SpringCloud Bus 消息总线
 
+## 1.概述
+
+**是什么：**Bus支持两种消息代理：RabbitMQ和kafka
+
+**能干嘛：**能管理和传播分布式系统间的消息，就像一个分布式执行器，可用于广播状态更改、事件推送等，也可以当作微服务间的通信通道
+
+**什么是总线：**在微服务架构的系统中，通常会使用轻量级的消息代理来构建一个共用的消息主题，并让系统中所有微服务实例都连接上来。由于该主题中产生的消息会被所有实例监听和消费，所以称它为消息总线。在总线上的各个实例，都可以方便地广播一些需要让其他连接在该主题上的实例都知道的消息。
+
+**基本原理：**ConfigClient实例都监听MQ中同一个topic（默认是SpringCloudBus）。当一个服务刷新数据的时候，他会把这个信息放入topic中，这样其他监听同一Topic的服务就能得到通知，然后去更新自身的配置。
+
+## 2. RabbitMQ环境配置
+
+1. 安装docker desktop，下载地址：https://www.docker.com/products/docker-desktop/
+
+2. 拉取rabbitmq镜像，命令：docker pull rabbitmq:3.8.0-beta.4-management（management是带有UI界面的）
+
+3. 启动rabbitmq容器，命令：
+
+   docker run -d --hostname my-rabbit -p 5672:5672 -p 15672:15672 rabbitmq:3.8.0-beta.4-management 
+
+4. 测试访问成功：http://localhost:15672
+
+5. 输入账号密码：guest guest
+
+## 3. SpringCloud Bus动态刷新全局广播
+
+## 4. SpringCloud Bus动态刷新定点通知
