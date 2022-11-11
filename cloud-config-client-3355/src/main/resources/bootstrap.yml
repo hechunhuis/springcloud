@@ -1,0 +1,23 @@
+server:
+  port: 3355
+spring:
+  application:
+    name: config-client-3355
+  cloud:
+    config:
+      label: master # 读取的分支
+      name: config # 文件配置前缀
+      profile: dev # 文件配置后缀
+      uri: http://localhost:3344 # config服务端
+
+# 服务注册到eureka地址
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka7001.com:7001/eureka
+# 暴露监控端口 解决config服务端刷新，客户端需要重启刷新问题
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
