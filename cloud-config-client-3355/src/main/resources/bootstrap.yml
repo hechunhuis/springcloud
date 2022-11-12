@@ -14,7 +14,7 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://eureka7001.com:7001/eureka
+      defaultZone: http://127.0.0.1:7001/eureka
 # 暴露监控端口 解决config服务端刷新，客户端需要重启刷新问题
 management:
   endpoints:

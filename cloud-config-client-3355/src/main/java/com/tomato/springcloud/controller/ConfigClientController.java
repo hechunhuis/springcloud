@@ -18,11 +18,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class ConfigClientController {
 
     //server.port为读取到github的配置文件，文件中的变量
-    @Value("${server.port}")
-    private String serverPort;
+    @Value("${config.version}")
+    private String configInfo;
 
-    @GetMapping("/server/port")
+    @GetMapping("/config/info")
     private String getConfigInfo() {
-        return serverPort;
+        return configInfo;
     }
 }

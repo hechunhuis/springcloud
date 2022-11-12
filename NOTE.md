@@ -24,21 +24,15 @@
 
 # 二. 技术学习路线
 
-
-
-服务注册中心：[Eureka](#三. Eureka服务注册中心)【**×**】 -> [Zookeeper](#四. Zookeeper)【√】 -> [Consul](#五. Consul)【√】 -> Nacos【√】
-
-服务调用：**[Ribbon](#六. Ribbon负载均衡)【√】 -> LoadBalancer【√】**
-
-服务调用2：Feign【**×**】 -> **[OpenFeign](#七. OpenFeign)【√】**
-
-服务降级：Hystrix【**×**】 -> **resilience4j 【√】-> sentinel【√】**
-
-服务网关：Zuul 【**×**】-> Zuul2【！】 -> **gateway**【√】
-
-服务配置：Config【**×**】 -> **Nacos**【√】
-
-服务总线：Bus【**×**】 -> **Nacos【√】**
+| 微服务介绍   | 技术1                                      | 技术2                                | 技术3                      | 技术4      |
+| ------------ | ------------------------------------------ | ------------------------------------ | -------------------------- | ---------- |
+| 服务注册中心 | [Eureka](#三. Eureka服务注册中心)【**×**】 | [Zookeeper](#四. Zookeeper)【√】     | [Consul](#五. Consul)【√】 | Nacos【√】 |
+| 服务调用     | **[Ribbon](#六. Ribbon负载均衡)【√】**     | **LoadBalancer【√】**                |                            |            |
+| 服务调用2    | Feign【**×**】                             | **[OpenFeign](#七. OpenFeign)【√】** |                            |            |
+| 服务降级     | Hystrix【**×**】                           | resilience4j 【√】                   | sentinel【√】              |            |
+| 服务网关     | Zuul 【**×**】                             | Zuul2【！】                          | **gateway**【√】           |            |
+| 服务配置     | Config【**×**】                            | **Nacos**【√】                       |                            |            |
+| 服务总线     | Bus【**×**】                               | **Nacos【√】**                       |                            |            |
 
 # 三. Eureka(服务注册中心)（已停更）
 
@@ -1277,7 +1271,172 @@ public class ConfigClientController {
 
 **配置后需要手动发送POST请求：curl -X POST "http://localhost:3355/actuator/refresh"，来刷新3355客户端的配置**
 
-**自动刷新参考BUS**
+**自动刷新参考SpringCloud Bus 消息总线**
 
 # 十二. SpringCloud Bus 消息总线
+
+## 1.概述
+
+**是什么：**Bus支持两种消息代理：RabbitMQ和kafka
+
+**能干嘛：**能管理和传播分布式系统间的消息，就像一个分布式执行器，可用于广播状态更改、事件推送等，也可以当作微服务间的通信通道
+
+**什么是总线：**在微服务架构的系统中，通常会使用轻量级的消息代理来构建一个共用的消息主题，并让系统中所有微服务实例都连接上来。由于该主题中产生的消息会被所有实例监听和消费，所以称它为消息总线。在总线上的各个实例，都可以方便地广播一些需要让其他连接在该主题上的实例都知道的消息。
+
+**基本原理：**ConfigClient实例都监听MQ中同一个topic（默认是SpringCloudBus）。当一个服务刷新数据的时候，他会把这个信息放入topic中，这样其他监听同一Topic的服务就能得到通知，然后去更新自身的配置。
+
+## 2. RabbitMQ环境配置
+
+1. 安装docker desktop，下载地址：https://www.docker.com/products/docker-desktop/
+
+2. 拉取rabbitmq镜像，命令：docker pull rabbitmq:3.8.0-beta.4-management（management是带有UI界面的）
+
+3. 启动rabbitmq容器，命令：
+
+   docker run -d --hostname my-rabbit -p 5672:5672 -p 15672:15672 rabbitmq:3.8.0-beta.4-management 
+
+4. 测试访问成功：http://localhost:15672
+
+5. 输入账号密码：guest guest
+
+## 3. SpringCloud Bus动态刷新全局广播
+
+**设计思想：**利用消息总线触发一个服务端ConfigServer的/bus/refresh端点，而刷新所有的客户端
+
+#### 配置中心服务端添加消息总线支持
+
+pom文件添加RabbitMQ支持
+
+```xml
+<dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bus-amqp</artifactId>
+        </dependency>
+```
+
+application.yml添加RabbitMQ配置，以及暴露配置刷新的端点
+
+```yaml
+server:
+  port: 3344
+
+spring:
+  application:
+    name: cloud-config-center
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/hechunhuis/springcloud-config.git # github上的仓库地址
+          # 搜索目录
+          search-paths:
+            - springcloud-config
+          timeout: 20
+      # 读取的分支
+      label: master
+  # 添加RabbitMQ的配置连接信息
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+# 服务注册到eureka地址
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka7001.com:7001/eureka
+
+
+
+# 暴露bus刷新配置的端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: 'bus-refresh'
+```
+
+#### 配置中心客户端添加消息总线支持
+
+pom文件添加RabbitMQ支持
+
+```xml
+<dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bus-amqp</artifactId>
+        </dependency>
+```
+
+bootstrap.yml配置增加RabbitMQ
+
+```
+server:
+  port: 3355
+spring:
+  application:
+    name: config-client-3355
+  cloud:
+    config:
+      label: master # 读取的分支
+      name: config # 文件配置前缀
+      profile: dev # 文件配置后缀
+      uri: http://localhost:3344 # config服务端
+  # 添加RabbitMQ的配置连接信息
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    
+# 服务注册到eureka地址
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka7001.com:7001/eureka
+# 暴露监控端口 解决config服务端刷新，客户端需要重启刷新问题
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+```
+
+#### 测试
+
+1. 启动注册中心、Config服务端、Config客户端
+2. 修改Github上配置文件的信息
+3. 查看注册中心，EurekaServer：http://localhost:7001
+4. 分别查看各个服务，configServer：http://localhost:3344/config-dev.yml  configClient：http://localhost:3355/server/port
+5. 发送POST请求刷新server：curl -X POST “http://ConfigServerIP:PORT/actuator/bus-refresh”
+6. 再次查看各个客户端服务，已更新
+
+## 4. SpringCloud Bus动态刷新定点通知
+
+# 十三. Sleuth链路监控
+
+## 1. 安装zipkin
+
+## 2. 配置
+
+### pom文件引入
+
+```xml
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-starter-zipkin</artifactId>
+</dependency>
+```
+
+### application.yml添加配置
+
+```yaml
+spring:
+  zipkin:
+    base-url: http://localhost:9411
+  sleuth:
+    sampler:
+      # 采样值介于0到1之间，1则表示全部采集
+      probability: 1
+```
 
