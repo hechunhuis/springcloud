@@ -1,6 +1,7 @@
 server:
   port: 3344
-
+  tomcat:
+    uri-encoding: utf-8
 
 spring:
   application:
@@ -13,12 +14,32 @@ spring:
           # 搜索目录
           search-paths:
             - springcloud-config
-          timeout: 20
+          timeout: 10
       # 读取的分支
       label: master
+  # 添加RabbitMQ的配置连接信息
+  rabbitmq:
+    host: 192.168.31.237
+    port: 5672
+    username: guest
+    password: guest
+  http:
+    encoding:
+      charset: UTF-8
+      force: true
+      enabled: true
 
 # 服务注册到eureka地址
 eureka:
   client:
     service-url:
-      defaultZone: http://eureka7001.com:7001/eureka
+      defaultZone: http://192.168.31.237:7001/eureka
+
+
+
+# 暴露bus刷新配置的端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: 'bus-refresh'

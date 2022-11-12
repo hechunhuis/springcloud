@@ -1301,4 +1301,114 @@ public class ConfigClientController {
 
 ## 3. SpringCloud Bus动态刷新全局广播
 
+**设计思想：**利用消息总线触发一个服务端ConfigServer的/bus/refresh端点，而刷新所有的客户端
+
+#### 配置中心服务端添加消息总线支持
+
+pom文件添加RabbitMQ支持
+
+```xml
+<dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bus-amqp</artifactId>
+        </dependency>
+```
+
+application.yml添加RabbitMQ配置，以及暴露配置刷新的端点
+
+```yaml
+server:
+  port: 3344
+
+spring:
+  application:
+    name: cloud-config-center
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/hechunhuis/springcloud-config.git # github上的仓库地址
+          # 搜索目录
+          search-paths:
+            - springcloud-config
+          timeout: 20
+      # 读取的分支
+      label: master
+  # 添加RabbitMQ的配置连接信息
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+# 服务注册到eureka地址
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka7001.com:7001/eureka
+
+
+
+# 暴露bus刷新配置的端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: 'bus-refresh'
+```
+
+#### 配置中心客户端添加消息总线支持
+
+pom文件添加RabbitMQ支持
+
+```xml
+<dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bus-amqp</artifactId>
+        </dependency>
+```
+
+bootstrap.yml配置增加RabbitMQ
+
+```
+server:
+  port: 3355
+spring:
+  application:
+    name: config-client-3355
+  cloud:
+    config:
+      label: master # 读取的分支
+      name: config # 文件配置前缀
+      profile: dev # 文件配置后缀
+      uri: http://localhost:3344 # config服务端
+  # 添加RabbitMQ的配置连接信息
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    
+# 服务注册到eureka地址
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka7001.com:7001/eureka
+# 暴露监控端口 解决config服务端刷新，客户端需要重启刷新问题
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+```
+
+#### 测试
+
+1. 启动注册中心、Config服务端、Config客户端
+2. 修改Github上配置文件的信息
+3. 查看注册中心，EurekaServer：http://localhost:7001
+4. 分别查看各个服务，configServer：http://localhost:3344/config-dev.yml  configClient：http://localhost:3355/server/port
+5. 发送POST请求刷新server：curl -X POST “http://ConfigServerIP:PORT/actuator/bus-refresh”
+6. 再次查看各个客户端服务，已更新
+
 ## 4. SpringCloud Bus动态刷新定点通知

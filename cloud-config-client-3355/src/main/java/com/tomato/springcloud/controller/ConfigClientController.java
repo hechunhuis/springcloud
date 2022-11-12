@@ -17,12 +17,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RefreshScope
 public class ConfigClientController {
 
-    //server.port为读取到github的配置文件，文件中的变量
-    @Value("${server.port}")
-    private String serverPort;
+    //config.info为读取到github的配置文件，文件中的变量
+    @Value("${config.info}")
+    private String configInfo;
 
-    @GetMapping("/server/port")
+    @Value("${config.version}")
+    private String configVersion;
+
+    @GetMapping("/getConfig")
     private String getConfigInfo() {
-        return serverPort;
+        return configInfo;
     }
 }
